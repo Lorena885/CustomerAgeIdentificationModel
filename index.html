@@ -327,9 +327,9 @@
   <header class="hero">
     <div class="hero-badge">computer vision &nbsp;·&nbsp; regression &nbsp;·&nbsp; transfer learning</div>
     <h1>Age Estimation from Facial Images</h1>
-    <p>Deep learning model using a ResNet50 backbone with transfer learning. Trained on 6,073 images and validated on 1,518 images to predict age as a continuous regression task. Final validation MAE: <strong style="-webkit-text-fill-color:var(--acc2);color:var(--acc2)">9.47 years</strong>.</p>
+    <p>Deep learning model using a ResNet50 backbone with transfer learning. Trained on 6,073 images and validated on 1,518 images to predict age as a continuous regression task. Final validation MAE: <strong style="-webkit-text-fill-color:var(--acc2);color:var(--acc2)">8.91 years</strong>.</p>
     <div class="hero-stats">
-      <div class="hstat"><div class="hstat-val">9.47</div><div class="hstat-lbl">Final MAE (years)</div></div>
+      <div class="hstat"><div class="hstat-val">8.91</div><div class="hstat-lbl">Final MAE (years)</div></div>
       <div class="hstat"><div class="hstat-val">7,591</div><div class="hstat-lbl">Total images</div></div>
       <div class="hstat"><div class="hstat-val">ResNet50</div><div class="hstat-lbl">Backbone</div></div>
       <div class="hstat"><div class="hstat-val">~24M</div><div class="hstat-lbl">Parameters</div></div>
@@ -338,15 +338,15 @@
 
   <!-- TABS -->
   <nav class="tabs" role="tablist">
-    <button class="tab-btn active" role="tab" onclick="switchTab('architecture', this)">Architecture</button>
+    <button class="tab-btn active" role="tab" onclick="switchTab('gallery', this)">Predictions</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('architecture', this)">Architecture</button>
     <button class="tab-btn" role="tab" onclick="switchTab('training', this)">Training curves</button>
     <button class="tab-btn" role="tab" onclick="switchTab('eda', this)">EDA</button>
-    <button class="tab-btn" role="tab" onclick="switchTab('gallery', this)">Predictions</button>
     <button class="tab-btn" role="tab" onclick="switchTab('pipeline', this)">Pipeline</button>
   </nav>
 
   <!-- ── ARCHITECTURE ──────────────────────────────────────────── -->
-  <section id="panel-architecture" class="panel active" role="tabpanel">
+  <section id="panel-architecture" class="panel" role="tabpanel">
     <div class="section-label">model architecture</div>
     <div class="section-title">ResNet50 + Regression Head</div>
     <div class="arch-wrap">
@@ -440,9 +440,9 @@
     <div class="section-label">model training</div>
     <div class="section-title">Training curves — MAE &amp; Loss per epoch</div>
     <div class="metrics-row">
-      <div class="metric-card"><div class="metric-val" style="color:#06d6a0">9.47</div><div class="metric-lbl">Best val MAE</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#06d6a0">8.91</div><div class="metric-lbl">Final val MAE</div></div>
       <div class="metric-card"><div class="metric-val" style="color:#f5a623">9.73</div><div class="metric-lbl">Best train MAE</div></div>
-      <div class="metric-card"><div class="metric-val" style="color:#00b4d8">11</div><div class="metric-lbl">Epochs run</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#00b4d8">17</div><div class="metric-lbl">Epochs run</div></div>
       <div class="metric-card"><div class="metric-val" style="color:#e94560">3</div><div class="metric-lbl">Early stop patience</div></div>
     </div>
 
@@ -455,7 +455,7 @@
       <div class="chart-card">
         <div class="chart-title">// MAE por época</div>
         <div style="position:relative;height:200px">
-          <canvas id="mae-chart" role="img" aria-label="Line chart showing MAE per epoch for training and validation sets, decreasing to a best validation MAE of 9.47"></canvas>
+          <canvas id="mae-chart" role="img" aria-label="Line chart showing MAE per epoch for training and validation sets, decreasing to a final validation MAE of 8.91"></canvas>
         </div>
       </div>
       <div class="chart-card">
@@ -508,13 +508,13 @@
   </section>
 
   <!-- ── GALLERY ───────────────────────────────────────────────── -->
-  <section id="panel-gallery" class="panel" role="tabpanel">
-    <div class="section-label">real dataset samples</div>
-    <div class="section-title">Ejemplos reales del dataset</div>
+  <section id="panel-gallery" class="panel active" role="tabpanel">
+    <div class="section-label">real model predictions</div>
+    <div class="section-title">Predicciones reales del modelo</div>
     <div class="metrics-row" style="margin-bottom:24px">
-      <div class="metric-card"><div class="metric-val" style="color:#00b4d8">8</div><div class="metric-lbl">Real samples</div></div>
-      <div class="metric-card"><div class="metric-val" style="color:#06d6a0">4-80</div><div class="metric-lbl">Age range shown</div></div>
-      <div class="metric-card"><div class="metric-val" style="color:#f5a623">CSV</div><div class="metric-lbl">Ground-truth labels</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#00b4d8">8</div><div class="metric-lbl">Predicted samples</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#06d6a0">0.9</div><div class="metric-lbl">Lowest sample error</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#f5a623">24.1</div><div class="metric-lbl">Highest sample error</div></div>
     </div>
     <div class="gallery-grid" id="gallery-grid"></div>
   </section>
@@ -563,11 +563,11 @@ model.fit(train_gen, validation_data=val_gen, epochs=50, callbacks=[es])</div>
       <div class="pipe-step">
         <div class="step-num" style="background:rgba(233,69,96,.15);color:#e94560;border:1px solid rgba(233,69,96,.3)">05</div>
         <div class="step-body">
-          <div class="step-title">Evaluación final — MAE: 9.47 años</div>
-          <div class="step-desc">El modelo predice la edad con un error promedio de ±9.47 años en el conjunto de validación. Rendimiento consistente con tareas de estimación de edad a partir de imágenes faciales con datasets de tamaño mediano.</div>
+          <div class="step-title">Evaluación final — MAE: 8.91 años</div>
+          <div class="step-desc">El modelo predice la edad con un error promedio de ±8.91 años en el conjunto de validación. Rendimiento consistente con tareas de estimación de edad a partir de imágenes faciales con datasets de tamaño mediano.</div>
           <div class="step-code">loss, mae = model.evaluate(val_gen)
-# Final MAE: 9.47 years
-# Interpretation: avg prediction off by ±9.47 yrs from true age</div>
+# Final MAE: 8.91 years
+# Interpretation: avg prediction off by ±8.91 yrs from true age</div>
         </div>
       </div>
     </div>
@@ -613,11 +613,11 @@ model.fit(train_gen, validation_data=val_gen, epochs=50, callbacks=[es])</div>
       if (trainingInited) return;
       trainingInited = true;
 
-      const epochs    = Array.from({length:11}, (_,i) => 'Ep '+(i+1));
-      const trainMAE  = [13.9501,12.0534,11.2478,10.8532,10.5656,10.3517,10.2071,10.1063,9.9679,9.8283,9.7290];
-      const valMAE    = [12.6995,11.3361,10.9316,10.2216,10.1444,9.8191,9.5850,9.4718,9.5507,9.7095,9.5842];
-      const trainLoss = [329.8167,241.4026,209.8819,195.6604,186.4622,179.7231,174.3881,170.3478,165.6856,162.4851,158.2674];
-      const valLoss   = [251.8407,195.7567,178.9217,161.7846,157.4833,150.2885,145.5525,142.6636,142.1689,144.8502,142.0012];
+      const epochs    = ['Ep 1','Ep 2','Ep 3','Ep 4','Ep 5','Ep 6','Ep 7','Ep 8','Ep 9','Ep 10','Ep 11','Ep 12','Ep 17','Final'];
+      const trainMAE  = [15.1844,12.0483,11.1791,10.7699,10.5696,10.3158,10.2140,10.0259,9.8910,9.7593,9.6272,9.5677,9.0984,null];
+      const valMAE    = [12.4207,10.9671,10.3547,10.1556,10.1899,9.8605,9.9191,9.4949,9.4619,9.3528,9.1892,9.1013,9.0133,8.9085];
+      const trainLoss = [394.8251,240.8389,207.2115,193.4189,186.3563,178.7993,173.8472,168.6356,163.3733,160.0867,155.2238,152.1552,138.2722,null];
+      const valLoss   = [246.9642,188.9362,168.8465,159.9846,157.8646,150.0468,150.1243,141.8413,140.1583,137.5954,134.5168,132.5062,127.8511,129.1967];
 
       new Chart(document.getElementById('mae-chart'), {
         type: 'line',
@@ -628,7 +628,7 @@ model.fit(train_gen, validation_data=val_gen, epochs=50, callbacks=[es])</div>
             { label:'Val MAE',   data:valMAE,   borderColor:'#06d6a0', backgroundColor:'transparent', pointRadius:2, borderWidth:2, tension:0.35, borderDash:[5,4] }
           ]
         },
-        options: { ...CD, scales: { ...CD.scales, y: { ...CD.scales.y, min:9, max:14.5 } } }
+        options: { ...CD, scales: { ...CD.scales, y: { ...CD.scales.y, min:8.5, max:16 } } }
       });
 
       new Chart(document.getElementById('loss-chart'), {
@@ -712,27 +712,31 @@ model.fit(train_gen, validation_data=val_gen, epochs=50, callbacks=[es])</div>
 
     /* ── GALLERY ───────────────────────────────────────────── */
     const faces = [
-      { image:'final_files/000000.jpg', name:'Image 000000', real:4,  group:'Child' },
-      { image:'final_files/000042.jpg', name:'Image 000042', real:15, group:'Teen' },
-      { image:'final_files/000006.jpg', name:'Image 000006', real:24, group:'Young adult' },
-      { image:'final_files/000037.jpg', name:'Image 000037', real:31, group:'Young adult' },
-      { image:'final_files/000007.jpg', name:'Image 000007', real:43, group:'Adult' },
-      { image:'final_files/000003.jpg', name:'Image 000003', real:50, group:'Adult' },
-      { image:'final_files/000115.jpg', name:'Image 000115', real:80, group:'Senior' },
-      { image:'final_files/000002.jpg', name:'Image 000002', real:80, group:'Senior' },
+      { image:'final_files/000000.jpg', name:'Image 000000', real:4,  pred:10.0, group:'Child' },
+      { image:'final_files/000042.jpg', name:'Image 000042', real:15, pred:14.1, group:'Teen' },
+      { image:'final_files/000006.jpg', name:'Image 000006', real:24, pred:16.8, group:'Young adult' },
+      { image:'final_files/000037.jpg', name:'Image 000037', real:31, pred:32.9, group:'Young adult' },
+      { image:'final_files/000007.jpg', name:'Image 000007', real:43, pred:37.5, group:'Adult' },
+      { image:'final_files/000003.jpg', name:'Image 000003', real:50, pred:25.9, group:'Adult' },
+      { image:'final_files/000115.jpg', name:'Image 000115', real:80, pred:62.3, group:'Senior' },
+      { image:'final_files/000002.jpg', name:'Image 000002', real:80, pred:63.3, group:'Senior' },
     ];
 
     const grid = document.getElementById('gallery-grid');
     faces.forEach(f => {
+      const err = Math.abs(f.real - f.pred);
+      const errPct = Math.min(err / 30, 1);
+      const errColor = err <= 5 ? '#06d6a0' : err <= 10 ? '#f5a623' : '#e94560';
       const card = document.createElement('div');
       card.className = 'gallery-card';
       card.innerHTML = `
-        <div class="face-preview"><img src="${f.image}" alt="Real dataset sample ${f.name}, labeled age ${f.real} years" loading="lazy"></div>
+        <div class="face-preview"><img src="${f.image}" alt="Real dataset sample ${f.name}, real age ${f.real} years, predicted age ${f.pred.toFixed(1)} years" loading="lazy"></div>
         <div class="face-info">
           <div class="face-name">${f.name}</div>
           <div class="age-row"><span class="age-lbl">Real age</span><span class="age-val" style="color:#00b4d8">${f.real} yrs</span></div>
-          <div class="age-row"><span class="age-lbl">Source</span><span class="age-val" style="color:#f5a623">labels.csv</span></div>
-          <div class="age-row"><span class="age-lbl">Group</span><span class="age-val" style="color:#06d6a0">${f.group}</span></div>
+          <div class="age-row"><span class="age-lbl">Predicted</span><span class="age-val" style="color:#f5a623">${f.pred.toFixed(1)} yrs</span></div>
+          <div class="age-row"><span class="age-lbl">Error</span><span class="age-val" style="color:${errColor}">±${err.toFixed(1)} yrs</span></div>
+          <div class="error-bar-wrap"><div class="error-bar" style="width:${Math.round(errPct*100)}%;background:${errColor}"></div></div>
         </div>`;
       grid.appendChild(card);
     });
