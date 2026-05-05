@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Age Estimation — Computer Vision Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --c1:    #1a1a2e;
+      --c2:    #16213e;
+      --c3:    #0f3460;
+      --acc:   #e94560;
+      --acc2:  #f5a623;
+      --teal:  #00b4d8;
+      --green: #06d6a0;
+      --purple:#7b2d8b;
+      --text:  #e8e8e8;
+      --muted: #8a8a9a;
+      --card:  rgba(255,255,255,0.04);
+      --border:rgba(255,255,255,0.08);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Sora', sans-serif;
+      background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 40%, #0f2044 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HERO ───────────────────────────────────────────── */
+    .hero {
+      padding: 48px 40px 32px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 380px; height: 380px;
+      background: radial-gradient(circle, rgba(233,69,96,.14) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; left: 30%;
+      width: 260px; height: 260px;
+      background: radial-gradient(circle, rgba(0,180,216,.08) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(233,69,96,.14);
+      border: 1px solid rgba(233,69,96,.3);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--acc);
+      margin-bottom: 18px;
+      letter-spacing: .06em;
+    }
+    .hero-badge::before { content: '◉'; font-size: 9px; }
+
+    .hero h1 {
+      font-size: clamp(24px, 4vw, 34px);
+      font-weight: 600;
+      line-height: 1.2;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #fff 0%, #b8c5e0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 560px;
+    }
+
+    .hero-stats {
+      display: flex; gap: 36px; flex-wrap: wrap;
+      margin-top: 28px;
+    }
+    .hstat-val {
+      font-size: 26px; font-weight: 600;
+      font-family: 'DM Mono', monospace;
+      color: var(--acc2);
+      line-height: 1;
+    }
+    .hstat-lbl {
+      font-size: 11px; color: var(--muted);
+      letter-spacing: .04em;
+      margin-top: 4px;
+    }
+
+    /* ── TABS ───────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted);
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      padding: 16px 22px;
+      border-bottom: 2px solid transparent;
+      transition: color .2s, border-color .2s;
+      white-space: nowrap;
+      letter-spacing: .01em;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--acc); border-bottom-color: var(--acc); }
+
+    /* ── PANELS ─────────────────────────────────────────── */
+    .panel { display: none; padding: 36px 40px; }
+    .panel.active { display: block; }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: .14em;
+      color: var(--acc);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-size: 18px; font-weight: 500;
+      margin-bottom: 24px;
+    }
+
+    /* ── METRICS ROW ────────────────────────────────────── */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .metric-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .metric-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 22px; font-weight: 500;
+      line-height: 1; margin-bottom: 5px;
+    }
+    .metric-lbl { font-size: 11px; color: var(--muted); }
+
+    /* ── CHART CARDS ────────────────────────────────────── */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 640px) { .chart-grid { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .chart-title {
+      font-size: 12px; color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: .04em;
+      margin-bottom: 14px;
+    }
+
+    /* ── LEGEND ─────────────────────────────────────────── */
+    .legend {
+      display: flex; gap: 20px; flex-wrap: wrap;
+      margin-bottom: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; color: var(--muted);
+    }
+    .legend span { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 10px; height: 3px; border-radius: 2px; }
+
+    /* ── GALLERY ────────────────────────────────────────── */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 14px;
+    }
+    .gallery-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color .2s, transform .15s;
+    }
+    .gallery-card:hover {
+      border-color: rgba(233,69,96,.4);
+      transform: translateY(-2px);
+    }
+    .face-preview {
+      width: 100%; aspect-ratio: 1;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.03);
+      overflow: hidden;
+    }
+    .face-preview img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .face-info { padding: 12px; }
+    .face-name { font-size: 11px; font-weight: 500; margin-bottom: 8px; }
+    .age-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 3px;
+    }
+    .age-lbl { font-size: 10px; color: var(--muted); }
+    .age-val { font-family: 'DM Mono', monospace; font-size: 12px; }
+    .error-bar-wrap {
+      height: 4px; background: rgba(255,255,255,.08);
+      border-radius: 2px; margin-top: 8px; overflow: hidden;
+    }
+    .error-bar { height: 100%; border-radius: 2px; }
+
+    /* ── ARCHITECTURE ───────────────────────────────────── */
+    .arch-wrap { overflow-x: auto; padding-bottom: 4px; }
+    .arch-svg-container { min-width: 580px; }
+
+    /* ── INSIGHT CHIPS ──────────────────────────────────── */
+    .insight-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .insight-chip {
+      background: rgba(0,180,216,.1);
+      border: 1px solid rgba(0,180,216,.25);
+      border-radius: 16px;
+      padding: 5px 13px;
+      font-size: 11px;
+      color: var(--teal);
+    }
+
+    /* ── PIPELINE ───────────────────────────────────────── */
+    .pipeline-steps { display: flex; flex-direction: column; }
+    .pipe-step {
+      display: flex; gap: 18px; align-items: flex-start;
+      padding: 22px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .pipe-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; font-weight: 500;
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .step-title { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+    .step-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+    .step-code {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      color: var(--teal);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* ── EDA ────────────────────────────────────────────── */
+    .eda-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 640px) { .eda-grid { grid-template-columns: 1fr; } }
+    .eda-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .eda-title {
+      font-size: 12px; color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 14px;
+    }
+
+    /* ── FOOTER ─────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 20px 40px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    footer a { color: var(--teal); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-badge">computer vision &nbsp;·&nbsp; regression &nbsp;·&nbsp; transfer learning</div>
+    <h1>Age Estimation from Facial Images</h1>
+    <p>Deep learning model using a ResNet50 backbone with transfer learning. Trained on 6,073 images and validated on 1,518 images to predict age as a continuous regression task. Final validation MAE: <strong style="-webkit-text-fill-color:var(--acc2);color:var(--acc2)">9.47 years</strong>.</p>
+    <div class="hero-stats">
+      <div class="hstat"><div class="hstat-val">9.47</div><div class="hstat-lbl">Final MAE (years)</div></div>
+      <div class="hstat"><div class="hstat-val">7,591</div><div class="hstat-lbl">Total images</div></div>
+      <div class="hstat"><div class="hstat-val">ResNet50</div><div class="hstat-lbl">Backbone</div></div>
+      <div class="hstat"><div class="hstat-val">~24M</div><div class="hstat-lbl">Parameters</div></div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" role="tab" onclick="switchTab('architecture', this)">Architecture</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('training', this)">Training curves</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('eda', this)">EDA</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('gallery', this)">Predictions</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('pipeline', this)">Pipeline</button>
+  </nav>
+
+  <!-- ── ARCHITECTURE ──────────────────────────────────────────── -->
+  <section id="panel-architecture" class="panel active" role="tabpanel">
+    <div class="section-label">model architecture</div>
+    <div class="section-title">ResNet50 + Regression Head</div>
+    <div class="arch-wrap">
+      <div class="arch-svg-container">
+        <svg width="100%" viewBox="0 0 660 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of the model architecture: input image flows through ResNet50 backbone into GAP, Dense(128), Dropout, and Dense(1) output">
+          <title>Model architecture</title>
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#8a8a9a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </marker>
+          </defs>
+
+          <!-- INPUT -->
+          <rect x="10" y="194" width="105" height="62" rx="8" fill="rgba(0,180,216,0.12)" stroke="rgba(0,180,216,0.4)" stroke-width="1"/>
+          <text x="62" y="216" text-anchor="middle" font-family="DM Mono,monospace" font-size="11" fill="#00b4d8">INPUT</text>
+          <text x="62" y="232" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="rgba(0,180,216,0.7)">224×224×3</text>
+          <text x="62" y="248" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="rgba(0,180,216,0.5)">RGB image</text>
+          <line x1="115" y1="225" x2="136" y2="225" stroke="#8a8a9a" stroke-width="1" marker-end="url(#arr)"/>
+
+          <!-- RESNET50 -->
+          <rect x="138" y="60" width="188" height="340" rx="10" fill="rgba(123,45,139,0.10)" stroke="rgba(123,45,139,0.35)" stroke-width="1" stroke-dasharray="5 3"/>
+          <text x="232" y="83" text-anchor="middle" font-family="Sora,sans-serif" font-size="11" fill="rgba(210,160,230,0.85)" font-weight="500">ResNet50 backbone</text>
+          <text x="232" y="99" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="rgba(200,150,220,0.45)">weights=imagenet · frozen</text>
+
+          <rect x="158" y="112" width="144" height="30" rx="5" fill="rgba(123,45,139,0.25)" stroke="rgba(123,45,139,0.4)" stroke-width="0.5"/>
+          <text x="230" y="131" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="rgba(210,160,230,0.9)">Conv2D block 1</text>
+
+          <rect x="158" y="152" width="144" height="30" rx="5" fill="rgba(123,45,139,0.20)" stroke="rgba(123,45,139,0.35)" stroke-width="0.5"/>
+          <text x="230" y="171" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="rgba(210,160,230,0.8)">Conv2D block 2</text>
+
+          <rect x="158" y="192" width="144" height="30" rx="5" fill="rgba(123,45,139,0.15)" stroke="rgba(123,45,139,0.28)" stroke-width="0.5"/>
+          <text x="230" y="211" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="rgba(210,160,230,0.7)">Conv2D block 3</text>
+
+          <text x="230" y="244" text-anchor="middle" font-family="DM Mono,monospace" font-size="12" fill="rgba(200,150,220,0.35)">·  ·  ·</text>
+
+          <rect x="158" y="258" width="144" height="30" rx="5" fill="rgba(123,45,139,0.12)" stroke="rgba(123,45,139,0.22)" stroke-width="0.5"/>
+          <text x="230" y="277" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="rgba(210,160,230,0.6)">Conv2D block 4</text>
+
+          <rect x="158" y="298" width="144" height="30" rx="5" fill="rgba(123,45,139,0.09)" stroke="rgba(123,45,139,0.18)" stroke-width="0.5"/>
+          <text x="230" y="317" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="rgba(210,160,230,0.5)">Conv2D block 5</text>
+
+          <text x="232" y="350" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="rgba(200,150,220,0.35)">output: 7×7×2048</text>
+          <text x="232" y="365" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="rgba(200,150,220,0.25)">23.5M params (frozen)</text>
+
+          <line x1="326" y1="225" x2="347" y2="225" stroke="#8a8a9a" stroke-width="1" marker-end="url(#arr)"/>
+
+          <!-- GAP -->
+          <rect x="349" y="196" width="72" height="58" rx="8" fill="rgba(6,214,160,0.10)" stroke="rgba(6,214,160,0.35)" stroke-width="1"/>
+          <text x="385" y="215" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="#06d6a0">GAP</text>
+          <text x="385" y="229" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="rgba(6,214,160,0.65)">Global Avg</text>
+          <text x="385" y="241" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="rgba(6,214,160,0.65)">Pooling 2D</text>
+          <text x="385" y="253" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="rgba(6,214,160,0.4)">→ 2048</text>
+          <line x1="421" y1="225" x2="442" y2="225" stroke="#8a8a9a" stroke-width="1" marker-end="url(#arr)"/>
+
+          <!-- DENSE 128 -->
+          <rect x="444" y="200" width="76" height="32" rx="7" fill="rgba(245,166,35,0.12)" stroke="rgba(245,166,35,0.4)" stroke-width="1"/>
+          <text x="482" y="215" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#f5a623">Dense(128)</text>
+          <text x="482" y="227" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="rgba(245,166,35,0.6)">ReLU</text>
+          <line x1="482" y1="232" x2="482" y2="248" stroke="#8a8a9a" stroke-width="1" marker-end="url(#arr)"/>
+
+          <!-- DROPOUT -->
+          <rect x="444" y="250" width="76" height="26" rx="7" fill="rgba(245,166,35,0.07)" stroke="rgba(245,166,35,0.25)" stroke-width="1"/>
+          <text x="482" y="267" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="rgba(245,166,35,0.7)">Dropout(0.2)</text>
+          <line x1="482" y1="276" x2="482" y2="290" stroke="#8a8a9a" stroke-width="1" marker-end="url(#arr)"/>
+
+          <!-- DENSE 1 OUTPUT -->
+          <rect x="444" y="292" width="76" height="52" rx="8" fill="rgba(233,69,96,0.15)" stroke="rgba(233,69,96,0.55)" stroke-width="1.5"/>
+          <text x="482" y="311" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="#e94560">Dense(1)</text>
+          <text x="482" y="325" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="rgba(233,69,96,0.7)">linear</text>
+          <text x="482" y="337" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="rgba(233,69,96,0.5)">→ age (yrs)</text>
+
+          <!-- FOOTER NOTE -->
+          <text x="12" y="428" font-family="DM Mono,monospace" font-size="9" fill="rgba(255,255,255,0.2)">Trainable params: ~262K  ·  Frozen (backbone): ~23.5M  ·  Loss: MSE  ·  Optimizer: Adam lr=1e-4  ·  Metric: MAE</text>
+          <text x="232" y="410" text-anchor="middle" font-family="Sora,sans-serif" font-size="9" fill="rgba(200,150,220,0.3)">← frozen — not updated during training →</text>
+          <text x="482" y="410" text-anchor="middle" font-family="Sora,sans-serif" font-size="9" fill="rgba(245,166,35,0.4)">← trainable head</text>
+        </svg>
+      </div>
+    </div>
+    <div class="insight-row">
+      <span class="insight-chip">Transfer learning from ImageNet</span>
+      <span class="insight-chip">Backbone frozen (phase 1)</span>
+      <span class="insight-chip">MSE loss · MAE metric</span>
+      <span class="insight-chip">Adam lr=1e-4</span>
+      <span class="insight-chip">Early stopping patience=3</span>
+      <span class="insight-chip">GlobalAveragePooling2D</span>
+    </div>
+  </section>
+
+  <!-- ── TRAINING ───────────────────────────────────────────────── -->
+  <section id="panel-training" class="panel" role="tabpanel">
+    <div class="section-label">model training</div>
+    <div class="section-title">Training curves — MAE &amp; Loss per epoch</div>
+    <div class="metrics-row">
+      <div class="metric-card"><div class="metric-val" style="color:#06d6a0">9.47</div><div class="metric-lbl">Best val MAE</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#f5a623">9.73</div><div class="metric-lbl">Best train MAE</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#00b4d8">11</div><div class="metric-lbl">Epochs run</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#e94560">3</div><div class="metric-lbl">Early stop patience</div></div>
+    </div>
+
+    <div class="legend">
+      <span><span class="legend-dot" style="background:#f5a623"></span>Train</span>
+      <span><span class="legend-dot" style="background:#06d6a0;border-top:2px dashed #06d6a0;background:none;width:16px"></span>Validation</span>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-title">// MAE por época</div>
+        <div style="position:relative;height:200px">
+          <canvas id="mae-chart" role="img" aria-label="Line chart showing MAE per epoch for training and validation sets, decreasing to a best validation MAE of 9.47"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">// Loss (MSE) por época</div>
+        <div style="position:relative;height:200px">
+          <canvas id="loss-chart" role="img" aria-label="Line chart showing MSE loss per epoch for training and validation sets"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">// Distribución del error de predicción — conjunto de validación</div>
+      <div style="position:relative;height:170px">
+        <canvas id="error-chart" role="img" aria-label="Bar chart showing count of validation samples grouped by prediction error in years"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── EDA ───────────────────────────────────────────────────── -->
+  <section id="panel-eda" class="panel" role="tabpanel">
+    <div class="section-label">exploratory data analysis</div>
+    <div class="section-title">Dataset — 7,591 imágenes faciales etiquetadas</div>
+    <div class="metrics-row">
+      <div class="metric-card"><div class="metric-val" style="color:#00b4d8">7,591</div><div class="metric-lbl">Total imágenes</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#06d6a0">31.2</div><div class="metric-lbl">Edad media</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#f5a623">1–100</div><div class="metric-lbl">Rango de edad</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#e94560">80/20</div><div class="metric-lbl">Train / Val split</div></div>
+    </div>
+    <div class="eda-grid">
+      <div class="eda-card">
+        <div class="eda-title">// Distribución de edades en el dataset</div>
+        <div style="position:relative;height:200px">
+          <canvas id="age-dist-chart" role="img" aria-label="Histogram showing age distribution, with peak between 20 and 40 years"></canvas>
+        </div>
+      </div>
+      <div class="eda-card">
+        <div class="eda-title">// Imágenes por rango de edad</div>
+        <div style="position:relative;height:200px">
+          <canvas id="age-range-chart" role="img" aria-label="Donut chart showing proportion of images per age group: children, young adults, adults, seniors"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="insight-row">
+      <span class="insight-chip">Alta concentración 20–40 años</span>
+      <span class="insight-chip">Mediana: 29 años</span>
+      <span class="insight-chip">Sin valores nulos</span>
+      <span class="insight-chip">Alta variabilidad en poses e iluminación</span>
+      <span class="insight-chip">Sesgo hacia adultos jóvenes</span>
+    </div>
+  </section>
+
+  <!-- ── GALLERY ───────────────────────────────────────────────── -->
+  <section id="panel-gallery" class="panel" role="tabpanel">
+    <div class="section-label">real dataset samples</div>
+    <div class="section-title">Ejemplos reales del dataset</div>
+    <div class="metrics-row" style="margin-bottom:24px">
+      <div class="metric-card"><div class="metric-val" style="color:#00b4d8">8</div><div class="metric-lbl">Real samples</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#06d6a0">4-80</div><div class="metric-lbl">Age range shown</div></div>
+      <div class="metric-card"><div class="metric-val" style="color:#f5a623">CSV</div><div class="metric-lbl">Ground-truth labels</div></div>
+    </div>
+    <div class="gallery-grid" id="gallery-grid"></div>
+  </section>
+
+  <!-- ── PIPELINE ──────────────────────────────────────────────── -->
+  <section id="panel-pipeline" class="panel" role="tabpanel">
+    <div class="section-label">ml pipeline</div>
+    <div class="section-title">De imagen raw a predicción de edad</div>
+    <div class="pipeline-steps">
+      <div class="pipe-step">
+        <div class="step-num" style="background:rgba(0,180,216,.15);color:#00b4d8;border:1px solid rgba(0,180,216,.3)">01</div>
+        <div class="step-body">
+          <div class="step-title">Carga de datos con ImageDataGenerator</div>
+          <div class="step-desc">7,591 imágenes cargadas en batches de 32 desde disco, sin cargar todo en memoria. División 80/20 automática mediante validation_split.</div>
+          <div class="step-code">datagen.flow_from_dataframe(df, x_col='file_name', y_col='real_age',
+  target_size=(224,224), batch_size=32, class_mode='raw')</div>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num" style="background:rgba(123,45,139,.15);color:#c896d8;border:1px solid rgba(123,45,139,.3)">02</div>
+        <div class="step-body">
+          <div class="step-title">Preprocesamiento específico para ResNet50</div>
+          <div class="step-desc">Normalización de píxeles con preprocess_input de ResNet50. Convierte a BGR y sustrae la media de ImageNet por canal.</div>
+          <div class="step-code">preprocessing_function=preprocess_input  # ResNet50 specific
+# Input: [0,255] RGB → Output: normalized BGR, ImageNet mean subtracted</div>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num" style="background:rgba(245,166,35,.15);color:#f5a623;border:1px solid rgba(245,166,35,.3)">03</div>
+        <div class="step-body">
+          <div class="step-title">Transfer Learning — backbone congelado</div>
+          <div class="step-desc">ResNet50 cargado con pesos de ImageNet. backbone.trainable=False. Solo se entrenan las ~262K parámetros de la cabeza de regresión.</div>
+          <div class="step-code">backbone = ResNet50(weights='imagenet', include_top=False)
+backbone.trainable = False  # 23.5M params frozen</div>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num" style="background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3)">04</div>
+        <div class="step-body">
+          <div class="step-title">Entrenamiento con Early Stopping</div>
+          <div class="step-desc">Hasta 50 épocas, monitor en val_MAE con patience=3. Restaura los mejores pesos automáticamente al finalizar el entrenamiento.</div>
+          <div class="step-code">EarlyStopping(monitor='val_mae', patience=3, restore_best_weights=True)
+model.fit(train_gen, validation_data=val_gen, epochs=50, callbacks=[es])</div>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num" style="background:rgba(233,69,96,.15);color:#e94560;border:1px solid rgba(233,69,96,.3)">05</div>
+        <div class="step-body">
+          <div class="step-title">Evaluación final — MAE: 9.47 años</div>
+          <div class="step-desc">El modelo predice la edad con un error promedio de ±9.47 años en el conjunto de validación. Rendimiento consistente con tareas de estimación de edad a partir de imágenes faciales con datasets de tamaño mediano.</div>
+          <div class="step-code">loss, mae = model.evaluate(val_gen)
+# Final MAE: 9.47 years
+# Interpretation: avg prediction off by ±9.47 yrs from true age</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span>Lorena Carvajal &nbsp;·&nbsp; <a href="https://lorena885.github.io/Portfolio" target="_blank">Portfolio</a> &nbsp;·&nbsp; <a href="https://github.com/Lorena885" target="_blank">GitHub</a> &nbsp;·&nbsp; <a href="https://linkedin.com/in/lorenacarvajalc" target="_blank">LinkedIn</a></span>
+    <span>ResNet50 · TensorFlow/Keras · ImageDataGenerator · Adam optimizer</span>
+  </footer>
+
+  <script>
+    /* ── TAB SWITCHING ─────────────────────────────────────── */
+    function switchTab(name, btn) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('panel-' + name).classList.add('active');
+      btn.classList.add('active');
+      if (name === 'training') initTrainingCharts();
+      if (name === 'eda')      initEdaCharts();
+    }
+
+    /* ── CHART DEFAULTS ────────────────────────────────────── */
+    const CD = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { color: '#8a8a9a', font: { family: 'DM Mono', size: 10 } }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { color: '#8a8a9a', font: { family: 'DM Mono', size: 10 } }
+        }
+      }
+    };
+
+    /* ── TRAINING CHARTS ───────────────────────────────────── */
+    let trainingInited = false;
+    function initTrainingCharts() {
+      if (trainingInited) return;
+      trainingInited = true;
+
+      const epochs    = Array.from({length:11}, (_,i) => 'Ep '+(i+1));
+      const trainMAE  = [13.9501,12.0534,11.2478,10.8532,10.5656,10.3517,10.2071,10.1063,9.9679,9.8283,9.7290];
+      const valMAE    = [12.6995,11.3361,10.9316,10.2216,10.1444,9.8191,9.5850,9.4718,9.5507,9.7095,9.5842];
+      const trainLoss = [329.8167,241.4026,209.8819,195.6604,186.4622,179.7231,174.3881,170.3478,165.6856,162.4851,158.2674];
+      const valLoss   = [251.8407,195.7567,178.9217,161.7846,157.4833,150.2885,145.5525,142.6636,142.1689,144.8502,142.0012];
+
+      new Chart(document.getElementById('mae-chart'), {
+        type: 'line',
+        data: {
+          labels: epochs,
+          datasets: [
+            { label:'Train MAE', data:trainMAE, borderColor:'#f5a623', backgroundColor:'transparent', pointRadius:2, borderWidth:2, tension:0.35 },
+            { label:'Val MAE',   data:valMAE,   borderColor:'#06d6a0', backgroundColor:'transparent', pointRadius:2, borderWidth:2, tension:0.35, borderDash:[5,4] }
+          ]
+        },
+        options: { ...CD, scales: { ...CD.scales, y: { ...CD.scales.y, min:9, max:14.5 } } }
+      });
+
+      new Chart(document.getElementById('loss-chart'), {
+        type: 'line',
+        data: {
+          labels: epochs,
+          datasets: [
+            { label:'Train Loss', data:trainLoss, borderColor:'#f5a623', backgroundColor:'transparent', pointRadius:2, borderWidth:2, tension:0.35 },
+            { label:'Val Loss',   data:valLoss,   borderColor:'#e94560', backgroundColor:'transparent', pointRadius:2, borderWidth:2, tension:0.35, borderDash:[5,4] }
+          ]
+        },
+        options: CD
+      });
+
+      new Chart(document.getElementById('error-chart'), {
+        type: 'bar',
+        data: {
+          labels: ['0–3 yrs','3–6 yrs','6–9 yrs','9–12 yrs','12–15 yrs','15–18 yrs','18–21 yrs','21+ yrs'],
+          datasets: [{
+            label: 'Samples',
+            data: [142,287,384,310,218,96,52,29],
+            backgroundColor: ['#06d6a0cc','#06d6a0aa','#f5a623cc','#f5a623aa','#e9456099','#e94560bb','#e94560cc','#e94560dd'],
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          ...CD,
+          scales: { ...CD.scales, x: { ...CD.scales.x, ticks: { ...CD.scales.x.ticks, autoSkip:false, maxRotation:35 } } }
+        }
+      });
+    }
+
+    /* ── EDA CHARTS ────────────────────────────────────────── */
+    let edaInited = false;
+    function initEdaCharts() {
+      if (edaInited) return;
+      edaInited = true;
+
+      const bins   = ['1–10','11–15','16–20','21–25','26–30','31–35','36–40','41–50','51–60','61–70','71+'];
+      const counts = [280,340,620,980,1050,890,720,760,480,290,181];
+
+      new Chart(document.getElementById('age-dist-chart'), {
+        type: 'bar',
+        data: {
+          labels: bins,
+          datasets: [{
+            label: 'Images',
+            data: counts,
+            backgroundColor: counts.map(v => v > 800 ? '#00b4d8cc' : v > 500 ? '#00b4d899' : '#00b4d866'),
+            borderRadius: 3
+          }]
+        },
+        options: {
+          ...CD,
+          scales: { ...CD.scales, x: { ...CD.scales.x, ticks: { ...CD.scales.x.ticks, autoSkip:false, maxRotation:40 } } }
+        }
+      });
+
+      new Chart(document.getElementById('age-range-chart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Children (1–17)','Young adults (18–35)','Adults (36–55)','Seniors (56+)'],
+          datasets: [{
+            data: [620,3740,2180,1051],
+            backgroundColor: ['#00b4d8cc','#06d6a0cc','#f5a623cc','#e94560cc'],
+            borderColor: 'transparent',
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true, position: 'bottom',
+              labels: { color:'#8a8a9a', font:{ family:'DM Mono', size:10 }, padding:14, boxWidth:10 }
+            }
+          }
+        }
+      });
+    }
+
+    /* ── GALLERY ───────────────────────────────────────────── */
+    const faces = [
+      { image:'final_files/000000.jpg', name:'Image 000000', real:4,  group:'Child' },
+      { image:'final_files/000042.jpg', name:'Image 000042', real:15, group:'Teen' },
+      { image:'final_files/000006.jpg', name:'Image 000006', real:24, group:'Young adult' },
+      { image:'final_files/000037.jpg', name:'Image 000037', real:31, group:'Young adult' },
+      { image:'final_files/000007.jpg', name:'Image 000007', real:43, group:'Adult' },
+      { image:'final_files/000003.jpg', name:'Image 000003', real:50, group:'Adult' },
+      { image:'final_files/000115.jpg', name:'Image 000115', real:80, group:'Senior' },
+      { image:'final_files/000002.jpg', name:'Image 000002', real:80, group:'Senior' },
+    ];
+
+    const grid = document.getElementById('gallery-grid');
+    faces.forEach(f => {
+      const card = document.createElement('div');
+      card.className = 'gallery-card';
+      card.innerHTML = `
+        <div class="face-preview"><img src="${f.image}" alt="Real dataset sample ${f.name}, labeled age ${f.real} years" loading="lazy"></div>
+        <div class="face-info">
+          <div class="face-name">${f.name}</div>
+          <div class="age-row"><span class="age-lbl">Real age</span><span class="age-val" style="color:#00b4d8">${f.real} yrs</span></div>
+          <div class="age-row"><span class="age-lbl">Source</span><span class="age-val" style="color:#f5a623">labels.csv</span></div>
+          <div class="age-row"><span class="age-lbl">Group</span><span class="age-val" style="color:#06d6a0">${f.group}</span></div>
+        </div>`;
+      grid.appendChild(card);
+    });
+  </script>
+</body>
+</html>
